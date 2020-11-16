@@ -44,7 +44,6 @@ export class RestaurantResolver {
     */
     @Args() createRestaurantInput: CreateRestaurantDto,
   ): boolean {
-    console.log(createRestaurantInput);
     return true;
   }
 }
