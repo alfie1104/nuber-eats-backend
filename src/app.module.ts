@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { GraphQLModule } from '@nestjs/graphql';
-import { join } from 'path';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { RestaurantsModule } from './restaurants/restaurants.module';
 
 //main.ts로 import되는 유일한 모듈
@@ -13,12 +13,27 @@ import { RestaurantsModule } from './restaurants/restaurants.module';
         autoSchemaFile옵션에 경로+파일명을 적으면 해당 경로에 지정한 이름의 schema파일이 생성됨
    - Schema First : GraphQLModule에게 schema가 기록된 파일 제공
 */
+/*
+  TypeOrmModuleOptions : {
+    synchronize : TypeORM이 데이터베이스에 연결할때 데이터베이스를 javascript 모듈의 현재 상태로 업데이트 할지 여부
+  }
+*/
 @Module({
   imports: [
+    RestaurantsModule,
+    TypeOrmModule.forRoot({
+      type: 'postgres',
+      host: 'localhost',
+      port: 5432,
+      username: 'postgres',
+      password: 'hk1111',
+      database: 'nuber-eats',
+      synchronize: true,
+      logging: true,
+    }),
     GraphQLModule.forRoot({
       autoSchemaFile: true,
     }),
-    RestaurantsModule,
   ],
   controllers: [],
   providers: [],
