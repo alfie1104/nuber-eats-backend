@@ -4,6 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import { GraphQLModule } from '@nestjs/graphql';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RestaurantsModule } from './restaurants/restaurants.module';
+import { Restaurant } from './restaurants/entities/restaurant.entity';
 
 //main.ts로 import되는 유일한 모듈
 //따라서 graphQL모듈도 AppModule에 추가해야함
@@ -19,7 +20,8 @@ import { RestaurantsModule } from './restaurants/restaurants.module';
 /*
   [TypeOrmModule]
   TypeOrmModuleOptions : {
-    synchronize : TypeORM이 데이터베이스에 연결할때 데이터베이스를 javascript 모듈의 현재 상태로 업데이트 할지 여부
+    synchronize : TypeORM이 데이터베이스에 연결할때 데이터베이스를 javascript 모듈의 현재 상태로 업데이트 할지 여부(TypeORM이 DB를 자동으로 Migration함)
+                (수동으로 DB를 -스키마- Update하고 싶으면 synchronize : false로 설정하면 됨)
   }
 */
 /*
@@ -62,8 +64,9 @@ import { RestaurantsModule } from './restaurants/restaurants.module';
       username: process.env.DB_USERNAME,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
-      synchronize: true,
+      synchronize: process.env.NODE_ENV !== 'prod',
       logging: true,
+      entities: [Restaurant],
     }),
     GraphQLModule.forRoot({
       autoSchemaFile: true,
