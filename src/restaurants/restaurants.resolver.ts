@@ -1,6 +1,7 @@
 import { Args, Mutation, Query, Resolver } from '@nestjs/graphql';
 import { CreateRestaurantDto } from './dtos/create-restaurant.dto';
 import { Restaurant } from './entities/restaurant.entity';
+import { RestaurantService } from './restaurants.service';
 
 /* 
   Resolver 데코레이터에는 ReturnTypeFunction을 넣어도 안 넣어도 된다.(not mandatory)
@@ -8,16 +9,16 @@ import { Restaurant } from './entities/restaurant.entity';
 */
 @Resolver(of => Restaurant)
 export class RestaurantResolver {
+  constructor(private readonly restaurantService: RestaurantService) {}
   //Query decorator는 ReturnTypeFunction을 받음. Function이 받고자 하는 type을 리턴해야함
   /*
    TypeScript에서는 배열 타입을 표시할때 Restaurant[] 로 표기하지만,
    GraphQL에서는 [Restaurant]로 표기함
   */
   @Query(returns => [Restaurant])
-  restaurants(@Args('veganOnly') veganOnly: boolean): Restaurant[] {
+  restaurants(): Promise<Restaurant[]> {
     //@Args("이름") 변수명 : 이름으로 전달된 인자를 변수명에 할당함
-    console.log(veganOnly);
-    return [];
+    return this.restaurantService.getAll();
   }
 
   /*
