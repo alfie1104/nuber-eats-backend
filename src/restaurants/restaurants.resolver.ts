@@ -9,6 +9,11 @@ import { RestaurantService } from './restaurants.service';
 */
 @Resolver(of => Restaurant)
 export class RestaurantResolver {
+  /*
+    RestaurantService를 사용하기 위해서 restaurants.module에서 RestaurantService를 Provider에 공급 하였음
+    @Injectable인 RestaurantService를 module에서 Provider에 공급하면,
+    Resolver에서 별도로 객체를 생성하지 않아도 사용 가능(by Injecting)
+  */
   constructor(private readonly restaurantService: RestaurantService) {}
   //Query decorator는 ReturnTypeFunction을 받음. Function이 받고자 하는 type을 리턴해야함
   /*
@@ -34,7 +39,7 @@ export class RestaurantResolver {
   이렇게 해도 되지만, 별도로 dto를 만들고 한번에 모든 파라미터를 넘길 수도 있다.
   */
   @Mutation(returns => Boolean)
-  createRestaurant(
+  async createRestaurant(
     /*
       DTO에서 @InputType 데코레이터를 사용하여 하나의 객체로 파라미터를 받도록 설정했다면
       @Args 데코레이터에는 해당 객체의 이름을 나타나는 파라미터명이 입력되어야함.
@@ -43,8 +48,14 @@ export class RestaurantResolver {
       하지만 DTO에서 @ArgsType 데코레이터를 이용하여 파라미터를 분리해서 받을 수 있도록 설정했다면,
       @Args 데코레이터에 아무런 이름을 지정하지 않아도 됨
     */
-    @Args() createRestaurantInput: CreateRestaurantDto,
-  ): boolean {
-    return true;
+    @Args('input') createRestaurantDto: CreateRestaurantDto,
+  ): Promise<boolean> {
+    try {
+      await this.restaurantService.createRestaurant(createRestaurantDto);
+      return true;
+    } catch (e) {
+      console.log(e);
+      return false;
+    }
   }
 }
