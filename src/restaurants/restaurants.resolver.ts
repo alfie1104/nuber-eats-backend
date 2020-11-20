@@ -50,7 +50,7 @@ export class RestaurantResolver {
       @Args 데코레이터에 아무런 이름을 지정하지 않아도 됨
     */
     @Args('input') createRestaurantDto: CreateRestaurantDto,
-  ): Promise<Boolean> {
+  ): Promise<boolean> {
     try {
       await this.restaurantService.createRestaurant(createRestaurantDto);
       return true;
@@ -63,7 +63,7 @@ export class RestaurantResolver {
   @Mutation(returns => Boolean)
   async updateRestaurant(
     @Args('input') updateRestaurantDto: UpdateRestaurantDto,
-  ): Promise<Boolean> {
+  ): Promise<boolean> {
     try {
       await this.restaurantService.updateRestaurant(updateRestaurantDto);
       return true;
