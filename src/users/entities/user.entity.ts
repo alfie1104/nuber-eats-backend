@@ -8,6 +8,7 @@ import { CoreEntity } from 'src/common/entities/core.entity';
 import { BeforeInsert, Column, Entity } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { InternalServerErrorException } from '@nestjs/common';
+import { IsEmail, IsEnum } from 'class-validator';
 
 enum UserRole {
   Owner,
@@ -23,6 +24,7 @@ registerEnumType(UserRole, { name: 'UserRole' }); //graphql을 위해 enum 등�
 export class User extends CoreEntity {
   @Column() //for DB
   @Field(type => String) //for graphql
+  @IsEmail()
   email: string;
 
   @Column()
@@ -31,6 +33,7 @@ export class User extends CoreEntity {
 
   @Column({ type: 'enum', enum: UserRole })
   @Field(type => UserRole)
+  @IsEnum(UserRole)
   role: UserRole;
 
   @BeforeInsert() //DB에 데이터를 Insert하기 전에 사용되는 TypeORM event Listner
@@ -39,6 +42,16 @@ export class User extends CoreEntity {
     //saltRounds는 10번 수행
     try {
       this.password = await bcrypt.hash(this.password, 10);
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException();
+    }
+  }
+
+  async checkPassword(aPassword: string): Promise<boolean> {
+    try {
+      const ok = await bcrypt.compare(aPassword, this.password);
+      return ok;
     } catch (e) {
       console.log(e);
       throw new InternalServerErrorException();
