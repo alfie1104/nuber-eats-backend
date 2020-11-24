@@ -12,7 +12,7 @@ import { UsersModule } from './users/users.module';
 import { CommonModule } from './common/common.module';
 import { User } from './users/entities/user.entity';
 import { JwtModule } from './jwt/jwt.module';
-import { jwtMiddleware } from './jwt/jwt.middleware';
+import { JwtMiddleware } from './jwt/jwt.middleware';
 
 //main.ts로 import되는 유일한 모듈
 //따라서 graphQL모듈도 AppModule에 추가해야함
@@ -115,8 +115,8 @@ export class AppModule implements NestModule {
       method: RequestMethod.ALL,
     });
     */
-    consumer.apply(jwtMiddleware).forRoutes({
-      path: '/*',
+    consumer.apply(JwtMiddleware).forRoutes({
+      path: '/graphql',
       method: RequestMethod.ALL,
     });
   }
