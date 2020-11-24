@@ -6,6 +6,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from './users/users.module';
 import { CommonModule } from './common/common.module';
 import { User } from './users/entities/user.entity';
+import { JwtModule } from './jwt/jwt.module';
 
 //main.ts로 import되는 유일한 모듈
 //따라서 graphQL모듈도 AppModule에 추가해야함
@@ -36,10 +37,20 @@ import { User } from './users/entities/user.entity';
   예)cross-env NODE_ENV=dev nest start --watch
   
   여기서 cross-env를 사용하기 위해 cross-env 패키지를 설치해야함
+
+
+  - isGlobal : true로 설정하면 다른 모듈에서 ConfigModule 혹은 ConfigService 사용시 별도로 import를 안해도 사용가능.
 */
 /*
   [Joi]
   환경변수 값 입력에 대해 유효성을 검사하기 위해 joi 패키지를 사용
+*/
+/*
+  [Dynamic Module vs Static Module]
+  - Dynamic Module : Static Method인 forRoot를 이용하여 설정정보를 전해주면 기능이 최종적으로 정해지는 것
+    예) ConfigModule, TypeOrmModule....
+  - Static Module : 항상 동일한 기능을 수행
+    예) UsersModule, CommonModule
 */
 @Module({
   imports: [
@@ -56,7 +67,7 @@ import { User } from './users/entities/user.entity';
         DB_USERNAME: Joi.string().required(),
         DB_PASSWORD: Joi.string().required(),
         DB_NAME: Joi.string().required(),
-        SECRET_KEY: Joi.string().required(),
+        PRIVATE_KEY: Joi.string().required(),
       }),
     }),
     TypeOrmModule.forRoot({
@@ -72,6 +83,9 @@ import { User } from './users/entities/user.entity';
     }),
     GraphQLModule.forRoot({
       autoSchemaFile: true,
+    }),
+    JwtModule.forRoot({
+      privateKey: process.env.PRIVATE_KEY,
     }),
     UsersModule,
     CommonModule,
