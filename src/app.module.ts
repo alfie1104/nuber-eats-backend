@@ -1,4 +1,9 @@
-import { Module } from '@nestjs/common';
+import {
+  MiddlewareConsumer,
+  Module,
+  NestModule,
+  RequestMethod,
+} from '@nestjs/common';
 import * as Joi from 'joi'; //TypeScript나 NestJS로 되어있지 않은 패키지를 import할때 이렇게해야함. 그냥 import Joi from "joi" 하면 Joi = undeifned가 됨. (joi라이브러리에서 Joi가 export 되어있지 않음)
 import { ConfigModule } from '@nestjs/config';
 import { GraphQLModule } from '@nestjs/graphql';
@@ -7,6 +12,7 @@ import { UsersModule } from './users/users.module';
 import { CommonModule } from './common/common.module';
 import { User } from './users/entities/user.entity';
 import { JwtModule } from './jwt/jwt.module';
+import { jwtMiddleware } from './jwt/jwt.middleware';
 
 //main.ts로 import되는 유일한 모듈
 //따라서 graphQL모듈도 AppModule에 추가해야함
@@ -93,4 +99,25 @@ import { JwtModule } from './jwt/jwt.module';
   controllers: [],
   providers: [],
 })
-export class AppModule {}
+// export class AppModule {}
+//Middleware를 사용하기 위해 NestModule을 Implements했음
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): any {
+    //이 부분 말고 미들웨어를 main.ts파일의 bootstrap 함수내에서 구현해도 됨. app.use(미들웨어명)
+    /*
+      apply만 해도되지만, 
+      forRoutes : forRoutes를 이용하여 어떤 경로에 middleware를 적용할지 지정할 수 있음
+      exclude : exclude를 이용하여 특정 경로만 제외 시킬 수 있음
+     */
+    /*
+    consumer.apply(jwtMiddleware).exclude({
+      path: '/admin',
+      method: RequestMethod.ALL,
+    });
+    */
+    consumer.apply(jwtMiddleware).forRoutes({
+      path: '/*',
+      method: RequestMethod.ALL,
+    });
+  }
+}
