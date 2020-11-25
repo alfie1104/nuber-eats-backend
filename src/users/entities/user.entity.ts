@@ -5,7 +5,7 @@ import {
   registerEnumType,
 } from '@nestjs/graphql';
 import { CoreEntity } from 'src/common/entities/core.entity';
-import { BeforeInsert, Column, Entity } from 'typeorm';
+import { BeforeInsert, BeforeUpdate, Column, Entity } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { InternalServerErrorException } from '@nestjs/common';
 import { IsEmail, IsEnum } from 'class-validator';
@@ -37,6 +37,8 @@ export class User extends CoreEntity {
   role: UserRole;
 
   @BeforeInsert() //DB에 데이터를 Insert하기 전에 사용되는 TypeORM event Listner
+  @BeforeUpdate() //DB에 데이터를 Update하기 전에 사용되는 TypeORM event Listner.
+  //BeforeUpdate를 작동시키려면 Entity를 통해서 데이터를 변경해야함. Repository.update()메소드는 Entity를 거치지 않고 바로 DB에 query를 전달하므로 BeforeUpdate가 동작하지 않음
   async hashPassword(): Promise<void> {
     //DB에 데이터를 입력하기 전 비밀번호를 암호화함.
     //saltRounds는 10번 수행

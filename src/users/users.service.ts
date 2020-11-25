@@ -5,6 +5,7 @@ import { CreateAccountInput } from './dtos/create-account.dto';
 import { LoginInput } from './dtos/login.dto';
 import { User } from './entities/user.entity';
 import { JwtService } from 'src/jwt/jwt.service';
+import { EditProfileInput } from './dtos/edit-profile.dto';
 
 @Injectable()
 export class UsersService {
@@ -76,5 +77,22 @@ export class UsersService {
 
   async findById(id: number): Promise<User> {
     return this.users.findOne({ id });
+  }
+
+  async editProfile(userId: number, { email, password }: EditProfileInput) {
+    /*
+      Repository.update()는 entity를 직접 update하지 않음. 그저 DB에 쿼리를 보내기만 함
+      따라서 update()메소드는 DB에 Entity가 실제로 있는지 체크하지 않으며,
+      Update시점에 Entity에 설정된 @BeforeUpdate 데코레이터도 동작하지 않음 (Entity를 건드리지 않으므로)
+    */
+    const user = await this.users.findOne(userId);
+    if (email) {
+      user.email = email;
+    }
+    if (password) {
+      user.password = password;
+    }
+
+    return this.users.save(user);
   }
 }
