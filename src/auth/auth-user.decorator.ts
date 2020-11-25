@@ -10,6 +10,7 @@ import { GqlExecutionContext } from '@nestjs/graphql';
 */
 export const AuthUser = createParamDecorator(
   (data: unknown, context: ExecutionContext) => {
+    //http 형태로 되어있는 nestjs의 ExecutionContext를 graphqlExecutionContext로 변환
     const gqlContext = GqlExecutionContext.create(context).getContext();
     const user = gqlContext['user'];
 

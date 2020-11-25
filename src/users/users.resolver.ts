@@ -7,6 +7,7 @@ import {
   CreateAccountOutput,
 } from './dtos/create-account.dto';
 import { LoginInput, LoginOutput } from './dtos/login.dto';
+import { UserProfileInput, UserProfileOutput } from './dtos/user-profile.dto';
 import { User } from './entities/user.entity';
 import { UsersService } from './users.service';
 
@@ -50,5 +51,28 @@ export class UsersResolver {
   me(@AuthUser() authUser: User) {
     //@AuthUser는 직접 만든 decorator임 (src/auth/auth-user.decorator)
     return authUser;
+  }
+
+  @Query(returns => UserProfileOutput)
+  @UseGuards(AuthGuard)
+  async userProfile(
+    @Args() userProfileInput: UserProfileInput,
+  ): Promise<UserProfileOutput> {
+    try {
+      const user = await this.userService.findById(userProfileInput.userId);
+
+      if (!user) {
+        throw Error();
+      }
+      return {
+        ok: true,
+        user,
+      };
+    } catch (e) {
+      return {
+        error: 'User Not Found',
+        ok: false,
+      };
+    }
   }
 }
