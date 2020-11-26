@@ -36,6 +36,10 @@ export class User extends CoreEntity {
   @IsEnum(UserRole)
   role: UserRole;
 
+  @Column({ default: false })
+  @Field(type => Boolean)
+  verified: boolean;
+
   @BeforeInsert() //DB에 데이터를 Insert하기 전에 사용되는 TypeORM event Listner
   @BeforeUpdate() //DB에 데이터를 Update하기 전에 사용되는 TypeORM event Listner.
   //BeforeUpdate를 작동시키려면 Entity를 통해서 데이터를 변경해야함. Repository.update()메소드는 Entity를 거치지 않고 바로 DB에 query를 전달하므로 BeforeUpdate가 동작하지 않음

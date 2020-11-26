@@ -1,7 +1,6 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
-import { TransformationType } from 'class-transformer/enums';
 import { NextFunction, Request, Response } from 'express';
-import { UsersService } from 'src/users/users.service';
+import { UserService } from 'src/users/users.service';
 import { JwtService } from './jwt.service';
 
 /*
@@ -16,7 +15,7 @@ export function jwtMiddleware(req: Request, res: Response, next: NextFunction) {
 export class JwtMiddleware implements NestMiddleware {
   constructor(
     private readonly jwtService: JwtService,
-    private readonly userService: UsersService,
+    private readonly userService: UserService,
   ) {}
 
   async use(req: Request, res: Response, next: NextFunction) {
