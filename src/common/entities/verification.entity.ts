@@ -15,8 +15,13 @@ export class Verification extends CoreEntity {
   /*
      we added @OneToOne to the profile and specify the target relation type to be Profile. 
      @JoinColumn : OneToOne 관계에서 한쪽 entity에만 설정. 이 데코레이터를 설정하는 쪽은 "relation id"를 포함하고 target entity table에 대한 foreign keys를 갖는 엔티이임
+
+     onDelete : 연결된 테이블의 행이 삭제될때, 현재 Verification 테이블의 데이터들을 어떻게 할 것인지 설정
+      - CASCADE : Veirification도 함께 삭제
+      - RESTRICT : 삭제하지 못 하게 함
+      - SET NULL : OneToOne이 설정된 칼럼의 값을 null로 설정
   */
-  @OneToOne(type => User)
+  @OneToOne(type => User, { onDelete: 'CASCADE' })
   @JoinColumn()
   user: User;
 

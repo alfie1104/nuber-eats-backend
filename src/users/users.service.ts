@@ -50,7 +50,13 @@ export class UserService {
     password,
   }: LoginInput): Promise<{ ok: boolean; error?: string; token?: string }> {
     try {
-      const user = await this.users.findOne({ email });
+      const user = await this.users.findOne(
+        { email },
+        { select: ['id', 'password'] },
+      ); /*
+        select 옵션을 주지 않으면, password칼럼은 가져오지 않음(Entity에 select false로 설정했기 때문)
+        그러면 나중에 checkPassword에서 password와 this.password를 비교 시, this.password정보가 null이라서 오류가 발생함
+      */
       // 1. find the user with the email
       if (!user) {
         return {
@@ -103,5 +109,32 @@ export class UserService {
     }
 
     return this.users.save(user);
+  }
+
+  async verifyEmail(code: string): Promise<boolean> {
+    try {
+      const verification = await this.verifications.findOne(
+        { code },
+        {
+          relations: ['user'],
+        },
+      );
+      /*
+        findOne의 옵션으로 loadRelationIds, relations를 사용가능
+        - loadRelationIds : true  : Relation을 설정한 칼럼의 값을 가져옴(relation 대상 테이블의 id값)
+        - relations : 테이블을 설정함으로써 relation되어있는 테이블 값 전체를 가져옴
+      */
+
+      if (verification) {
+        verification.user.verified = true;
+        this.users.save(verification.user);
+        return true;
+      }
+
+      throw new Error();
+    } catch (e) {
+      console.log(e);
+      return false;
+    }
   }
 }

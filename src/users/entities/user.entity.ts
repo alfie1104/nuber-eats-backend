@@ -27,7 +27,7 @@ export class User extends CoreEntity {
   @IsEmail()
   email: string;
 
-  @Column()
+  @Column({ select: false }) //데이터를 가져올때 password는 가져오지 않도록 설정.
   @Field(type => String)
   password: string;
 
@@ -46,11 +46,18 @@ export class User extends CoreEntity {
   async hashPassword(): Promise<void> {
     //DB에 데이터를 입력하기 전 비밀번호를 암호화함.
     //saltRounds는 10번 수행
-    try {
-      this.password = await bcrypt.hash(this.password, 10);
-    } catch (e) {
-      console.log(e);
-      throw new InternalServerErrorException();
+    if (this.password) {
+      /*
+        사용자가 입력한 데이터에 password정보가 있을 경우에만 암호화 로직을 수행
+        그렇지 않으면 매번 데이터를 입력(비밀번호를 변경하지 않을때에도) 할때마다 암호화가 수행되어서,
+        암호화된 비밀번호를 다시 암호화하게 되는 문제 발생
+        */
+      try {
+        this.password = await bcrypt.hash(this.password, 10);
+      } catch (e) {
+        console.log(e);
+        throw new InternalServerErrorException();
+      }
     }
   }
 
