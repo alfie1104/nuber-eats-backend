@@ -17,6 +17,9 @@ import { UserService } from './users.service';
 export class UsersResolver {
   constructor(private readonly userService: UserService) {}
 
+  //resolver는 몇개의 input을 받아서 input들을 올바른 service로 전달하는 일만 하도록 구성
+  //try catch, if-else등은 모두 service에서 진행. Service에 모든 로직을 작성
+
   @Query(returns => Boolean)
   hi() {
     return true;
@@ -26,26 +29,12 @@ export class UsersResolver {
   async createAccount(
     @Args('input') createAccountInput: CreateAccountInput,
   ): Promise<CreateAccountOutput> {
-    try {
-      return this.userService.createAccount(createAccountInput);
-    } catch (error) {
-      return {
-        ok: false,
-        error,
-      };
-    }
+    return this.userService.createAccount(createAccountInput);
   }
 
   @Mutation(returns => LoginOutput)
   async login(@Args('input') loginInput: LoginInput): Promise<LoginOutput> {
-    try {
-      return this.userService.login(loginInput);
-    } catch (error) {
-      return {
-        ok: false,
-        error,
-      };
-    }
+    return this.userService.login(loginInput);
   }
 
   @Query(returns => User)
@@ -60,22 +49,7 @@ export class UsersResolver {
   async userProfile(
     @Args() userProfileInput: UserProfileInput,
   ): Promise<UserProfileOutput> {
-    try {
-      const user = await this.userService.findById(userProfileInput.userId);
-
-      if (!user) {
-        throw Error();
-      }
-      return {
-        ok: true,
-        user,
-      };
-    } catch (e) {
-      return {
-        error: 'User Not Found',
-        ok: false,
-      };
-    }
+    return this.userService.findById(userProfileInput.userId);
   }
 
   @UseGuards(AuthGuard)
@@ -84,33 +58,13 @@ export class UsersResolver {
     @AuthUser() authUser: User,
     @Args('input') editProfileInput: EditProfileInput,
   ): Promise<EditProfileOutput> {
-    try {
-      await this.userService.editProfile(authUser.id, editProfileInput);
-      return {
-        ok: true,
-      };
-    } catch (error) {
-      return {
-        ok: false,
-        error,
-      };
-    }
+    return this.userService.editProfile(authUser.id, editProfileInput);
   }
 
   @Mutation(returns => VerifyEmailOutput)
-  async verifyEmail(
+  verifyEmail(
     @Args('input') { code }: VerifyEmailInput,
   ): Promise<VerifyEmailOutput> {
-    try {
-      await this.userService.verifyEmail(code);
-      return {
-        ok: true,
-      };
-    } catch (error) {
-      return {
-        ok: false,
-        error,
-      };
-    }
+    return this.userService.verifyEmail(code);
   }
 }
