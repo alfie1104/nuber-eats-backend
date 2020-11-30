@@ -154,6 +154,12 @@ export class UserService {
       if (verification) {
         verification.user.verified = true;
         this.users.save(verification.user);
+
+        /*
+          사용자 인증이 완료되면, verification을 삭제함.
+          유저 당 하나의 인증서만 가질 수 있고 인증서당 하나의 유저만 가질 수 있기때문
+        */
+        await this.verifications.delete(verification.id);
         return { ok: true };
       }
 
