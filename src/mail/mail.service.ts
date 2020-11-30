@@ -16,9 +16,11 @@ export class MailService {
     //Form 형태로 데이터를 생성하기 위해 form-data라이브러리 사용
     const form = new FormData();
     form.append('from', this.options.fromEmail);
-    form.append('to', 'alfie1104@hanmail.net');
+    form.append('to', '21600024@hankooktech.com');
     form.append('subject', subject);
-    form.append('text', content);
+    form.append('template', 'verify-email');
+    form.append('v:code', 'assss');
+    form.append('v:username', 'nico!!!');
     /*
         HTTP Authorization에는 Basic, Bearer, Digest등이 있음
         1) Authorization의 헤더
