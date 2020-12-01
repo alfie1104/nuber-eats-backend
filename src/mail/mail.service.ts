@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { CONFIG_OPTIONS } from 'src/common/common.constants';
-import { MailModuleOptions } from './mail.interfaces';
+import { EmailVar, MailModuleOptions } from './mail.interfaces';
 import got from 'got';
 import * as FormData from 'form-data';
 
@@ -9,18 +9,24 @@ export class MailService {
   constructor(
     @Inject(CONFIG_OPTIONS) private readonly options: MailModuleOptions,
   ) {
-    //this.sendEmail('testing', 'test');
+    //this.sendVerificationEmail('test@email', 'test');
   }
 
-  private async sendEmail(subject: string, content: string) {
+  private async sendEmail(
+    subject: string,
+    to: string,
+    template: string,
+    emailVars: EmailVar[],
+  ) {
     //Form 형태로 데이터를 생성하기 위해 form-data라이브러리 사용
     const form = new FormData();
-    form.append('from', this.options.fromEmail);
-    form.append('to', '21600024@hankooktech.com');
+    form.append('from', `Nuber Eats <mailgun@${this.options.fromEmail}`);
+    form.append('to', to);
     form.append('subject', subject);
-    form.append('template', 'verify-email');
-    form.append('v:code', 'assss');
-    form.append('v:username', 'nico!!!');
+    form.append('template', template);
+    emailVars.forEach(eVar => form.append(`v:${eVar.key}`, eVar.value));
+
+    console.log(this.options);
     /*
         HTTP Authorization에는 Basic, Bearer, Digest등이 있음
         1) Authorization의 헤더
@@ -30,9 +36,8 @@ export class MailService {
          - Bearer : 
 
       */
-    const response = await got(
-      `https://api.mailgun.net/v3/${this.options.domain}/messages`,
-      {
+    try {
+      await got(`https://api.mailgun.net/v3/${this.options.domain}/messages`, {
         method: 'POST',
         headers: {
           Authorization: `Basic ${Buffer.from(
@@ -40,9 +45,21 @@ export class MailService {
           ).toString('base64')}`,
         },
         body: form,
-      },
-    );
+      });
+    } catch (error) {
+      console.log(error);
+    }
+  }
 
-    console.log(response.body);
+  sendVerificationEmail(email: string, code: string) {
+    this.sendEmail(
+      'Verify Your Email',
+      '21600024@hankooktech.com',
+      'verify-email',
+      [
+        { key: 'code', value: code },
+        { key: 'username', value: email },
+      ],
+    );
   }
 }
