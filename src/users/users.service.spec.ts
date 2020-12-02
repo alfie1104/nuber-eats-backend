@@ -13,7 +13,7 @@ import { UserService } from './users.service';
   Mock은 fake implementation of function, class임. 즉 가짜 repository를 생성
   이런걸 Mocking이라고 함
 
-  jest.fn() : mock function을 생성함
+  jest.fn() : mock function을 생성함 (가짜 함수)
 */
 const mockRepository = {
   findOne: jest.fn(),
@@ -77,8 +77,33 @@ describe('UserService', () => {
   });
 
   describe('createAccount', () => {
-    it('should fail if user exists', () => {});
+    it('should fail if user exists', async () => {
+      /*
+        [mockResolvedValue]
+        원래는 usersRepository의 findOne은 DB를 검색하게 되지만,
+        jest의 mock을 이용한 가짜함수덕분에 findOne의 반환값을 속일 수 있음.(DB 사용 X)
+
+        mock을 사용하면 실제 코드의 특정 부분(본 코드의 경우 usersRepository.findOne 함수)을 mock함수로 대체해서 구동시키게 됨
+
+        즉, createAccount 자체의 로직 검사에만 집중가능
+        (DB 접근과 같이 다른 함수에 의존되는 부분은 모두 mock함수로 대체해서 createAccount를 속이게됨)
+      */
+      usersRepository.findOne.mockResolvedValue({
+        id: 1,
+        email: 'lalalalala',
+      }); //createAccount를 속이기위해 가짜 유저 형태를 생성
+      const result = await service.createAccount({
+        email: '',
+        password: '',
+        role: 0,
+      });
+      expect(result).toMatchObject({
+        ok: false,
+        error: 'There is a user with that email already',
+      });
+    });
   });
+
   it.todo('login');
   it.todo('findById');
   it.todo('editProfile');
