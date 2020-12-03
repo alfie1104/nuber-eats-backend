@@ -15,11 +15,11 @@ import { UserService } from './users.service';
 
   jest.fn() : mock function을 생성함 (가짜 함수)
 */
-const mockRepository = {
+const mockRepository = () => ({
   findOne: jest.fn(),
   save: jest.fn(),
   create: jest.fn(),
-};
+});
 
 const mockJwtService = {
   sign: jest.fn(),
@@ -43,6 +43,8 @@ type MockRepository<T = any> = Partial<
 describe('UserService', () => {
   let service: UserService;
   let usersRepository: MockRepository<User>;
+  let verificationRepository: MockRepository<Verification>;
+  let mailService: MailService;
 
   beforeAll(async () => {
     //테스트를 시작하기 전 UserService를 제공하는 테스팅 모듈 생성
@@ -51,11 +53,11 @@ describe('UserService', () => {
         UserService,
         {
           provide: getRepositoryToken(User),
-          useValue: mockRepository,
+          useValue: mockRepository(),
         },
         {
           provide: getRepositoryToken(Verification),
-          useValue: mockRepository,
+          useValue: mockRepository(),
         },
         {
           provide: JwtService,
@@ -69,7 +71,9 @@ describe('UserService', () => {
     }).compile();
 
     service = module.get<UserService>(UserService);
+    mailService = module.get<MailService>(MailService);
     usersRepository = module.get(getRepositoryToken(User));
+    verificationRepository = module.get(getRepositoryToken(Verification));
   });
 
   it('should be defined', () => {
@@ -77,9 +81,14 @@ describe('UserService', () => {
   });
 
   describe('createAccount', () => {
+    const createAccountArgs = {
+      email: '',
+      password: '',
+      role: 0,
+    };
     it('should fail if user exists', async () => {
       /*
-        [mockResolvedValue]
+        [mockResolvedValue, mockReturnValue]
         원래는 usersRepository의 findOne은 DB를 검색하게 되지만,
         jest의 mock을 이용한 가짜함수덕분에 findOne의 반환값을 속일 수 있음.(DB 사용 X)
 
@@ -90,17 +99,45 @@ describe('UserService', () => {
       */
       usersRepository.findOne.mockResolvedValue({
         id: 1,
-        email: 'lalalalala',
-      }); //createAccount를 속이기위해 가짜 유저 형태를 생성
-      const result = await service.createAccount({
         email: '',
-        password: '',
-        role: 0,
-      });
+      }); //createAccount를 속이기위해 가짜 유저 형태를 생성
+      const result = await service.createAccount(createAccountArgs);
       expect(result).toMatchObject({
         ok: false,
         error: 'There is a user with that email already',
       });
+    });
+
+    it('should create a new user', async () => {
+      usersRepository.findOne.mockResolvedValue(undefined); //Promise를 return하므로 mockResolvedValue를 이용하여 반환값을 mocking함
+      usersRepository.create.mockReturnValue(createAccountArgs);
+      usersRepository.save.mockResolvedValue(createAccountArgs);
+      verificationRepository.create.mockReturnValue({
+        user: createAccountArgs,
+      });
+      verificationRepository.save.mockResolvedValue({
+        code: 'code',
+      });
+
+      const result = await service.createAccount(createAccountArgs);
+      expect(usersRepository.create).toHaveBeenCalledTimes(1);
+      expect(usersRepository.create).toHaveBeenCalledWith(createAccountArgs);
+      expect(usersRepository.save).toHaveBeenCalledTimes(1);
+      expect(usersRepository.save).toHaveBeenCalledWith(createAccountArgs);
+      expect(verificationRepository.create).toHaveBeenCalledTimes(1);
+      expect(verificationRepository.create).toHaveBeenCalledWith({
+        user: createAccountArgs,
+      });
+      expect(verificationRepository.save).toHaveBeenCalledTimes(1);
+      expect(verificationRepository.save).toHaveBeenCalledWith({
+        user: createAccountArgs,
+      });
+      expect(mailService.sendVerificationEmail).toHaveBeenCalledTimes(1);
+      expect(mailService.sendVerificationEmail).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.any(String),
+      );
+      expect(result).toEqual({ ok: true });
     });
   });
 
