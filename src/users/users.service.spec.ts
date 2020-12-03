@@ -1,6 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Verification } from 'src/common/entities/verification.entity';
+import { JwtMiddleware } from 'src/jwt/jwt.middleware';
 import { JwtService } from 'src/jwt/jwt.service';
 import { MailService } from 'src/mail/mail.service';
 import { Repository } from 'typeorm';
@@ -22,7 +23,7 @@ const mockRepository = () => ({
 });
 
 const mockJwtService = {
-  sign: jest.fn(),
+  sign: jest.fn(() => 'signed-token'),
   verify: jest.fn(),
 };
 
@@ -45,8 +46,17 @@ describe('UserService', () => {
   let usersRepository: MockRepository<User>;
   let verificationRepository: MockRepository<Verification>;
   let mailService: MailService;
+  let jwtService: JwtService;
 
-  beforeAll(async () => {
+  /*
+    [beforeEach]
+    일반적으로 unit test를 할 때에는 beforeEach를 쓰고(각 모듈에서 메모리를 공유하는 것 방지)
+    그래야 검사하려는 로직에서 특정 함수가 몇번 호출되었는지 정확히 파악가능
+
+    [beforeAll]
+    end-to-end test를 할때 사용
+  */
+  beforeEach(async () => {
     //테스트를 시작하기 전 UserService를 제공하는 테스팅 모듈 생성
     const module = await Test.createTestingModule({
       providers: [
@@ -72,6 +82,7 @@ describe('UserService', () => {
 
     service = module.get<UserService>(UserService);
     mailService = module.get<MailService>(MailService);
+    jwtService = module.get<JwtService>(JwtService);
     usersRepository = module.get(getRepositoryToken(User));
     verificationRepository = module.get(getRepositoryToken(Verification));
   });
@@ -139,9 +150,60 @@ describe('UserService', () => {
       );
       expect(result).toEqual({ ok: true });
     });
+
+    it('should fail on exception', async () => {
+      usersRepository.findOne.mockRejectedValue(new Error(''));
+      const result = await service.createAccount(createAccountArgs);
+      expect(result).toEqual({ ok: false, error: "Couldn't create account" });
+    });
   });
 
-  it.todo('login');
+  describe('login', () => {
+    const loginArgs = {
+      email: 'bs@email.com',
+      password: 'bs.password',
+    };
+    it('should fail if user does not exist', async () => {
+      usersRepository.findOne.mockResolvedValue(null);
+
+      const result = await service.login(loginArgs);
+
+      expect(usersRepository.findOne).toHaveBeenCalledTimes(1);
+      expect(usersRepository.findOne).toHaveBeenCalledWith(
+        expect.any(Object),
+        expect.any(Object),
+      );
+      expect(result).toEqual({
+        ok: false,
+        error: 'User not found',
+      });
+    });
+
+    it('should fail if the password is wrong', async () => {
+      //jest.fn(()=> Promise.resolve(false)) : promise를 return하는 mock function이고 해당 promise는 최종적으로 false값을 보냄
+      // 즉, 패스워드 체크를 틀린것으로 설정
+      const mockedUser = {
+        id: 1,
+        checkPassword: jest.fn(() => Promise.resolve(false)),
+      };
+      usersRepository.findOne.mockResolvedValue(mockedUser);
+      const result = await service.login(loginArgs);
+      expect(result).toEqual({ ok: false, error: 'Wrong password' });
+    });
+
+    it('should return token if password correct', async () => {
+      const mockedUser = {
+        id: 1,
+        checkPassword: jest.fn(() => Promise.resolve(true)),
+      };
+      usersRepository.findOne.mockResolvedValue(mockedUser);
+      const result = await service.login(loginArgs);
+      expect(jwtService.sign).toHaveBeenCalledTimes(1);
+      expect(jwtService.sign).toHaveBeenCalledWith(expect.any(Number));
+      expect(result).toEqual({ ok: true, token: 'signed-token' });
+    });
+  });
+
   it.todo('findById');
   it.todo('editProfile');
   it.todo('verifyEmail');
