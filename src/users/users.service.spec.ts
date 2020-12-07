@@ -203,6 +203,8 @@ describe('UserService', () => {
       expect(jwtService.sign).toHaveBeenCalledWith(expect.any(Number));
       expect(result).toEqual({ ok: true, token: 'signed-token' });
     });
+
+    it.todo('shuld fail on error');
   });
 
   describe('findById', () => {
