@@ -26,7 +26,6 @@ export class MailService {
     form.append('template', template);
     emailVars.forEach(eVar => form.append(`v:${eVar.key}`, eVar.value));
 
-    console.log(this.options);
     /*
         HTTP Authorization에는 Basic, Bearer, Digest등이 있음
         1) Authorization의 헤더
