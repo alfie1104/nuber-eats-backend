@@ -22,7 +22,8 @@ registerEnumType(UserRole, { name: 'UserRole' }); //graphql을 위해 enum 등�
 @ObjectType()
 @Entity()
 export class User extends CoreEntity {
-  @Column() //for DB
+  //중복된 email이 없도록 하기 위해 unique옵션을 설정한다
+  @Column({ unique: true }) //for DB.
   @Field(type => String) //for graphql
   @IsEmail()
   email: string;

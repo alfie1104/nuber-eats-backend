@@ -117,12 +117,18 @@ export class UserService {
       따라서 update()메소드는 DB에 Entity가 실제로 있는지 체크하지 않으며,
       Update시점에 Entity에 설정된 @BeforeUpdate 데코레이터도 동작하지 않음 (Entity를 건드리지 않으므로)
     */
-
     try {
       const user = await this.users.findOne(userId);
       if (email) {
         user.email = email;
         user.verified = false;
+
+        //새로운 verification을 생성하기 전에, 기존에 userId와 관계되어 생성되었던 verification을 삭제
+        await this.verifications.delete({
+          user: {
+            id: user.id,
+          },
+        });
         const verification = await this.verifications.save(
           this.verifications.create({ user }),
         );
