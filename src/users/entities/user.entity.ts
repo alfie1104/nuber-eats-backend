@@ -5,10 +5,11 @@ import {
   registerEnumType,
 } from '@nestjs/graphql';
 import { CoreEntity } from 'src/common/entities/core.entity';
-import { BeforeInsert, BeforeUpdate, Column, Entity } from 'typeorm';
+import { BeforeInsert, BeforeUpdate, Column, Entity, OneToMany } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { InternalServerErrorException } from '@nestjs/common';
-import { IsEmail, IsEnum } from 'class-validator';
+import { IsBoolean, IsEmail, IsEnum, IsString } from 'class-validator';
+import { Restaurant } from 'src/restaurants/entities/restaurant.entity';
 
 enum UserRole {
   Owner,
@@ -18,7 +19,7 @@ enum UserRole {
 
 registerEnumType(UserRole, { name: 'UserRole' }); //graphql을 위해 enum 등록
 
-@InputType({ isAbstract: true }) // 상속시 InputType으로 상속하기 위해
+@InputType('UserInputType', { isAbstract: true }) // 상속시 InputType으로 상속하기 위해
 @ObjectType()
 @Entity()
 export class User extends CoreEntity {
@@ -30,6 +31,7 @@ export class User extends CoreEntity {
 
   @Column({ select: false }) //데이터를 가져올때 password는 가져오지 않도록 설정.
   @Field(type => String)
+  @IsString()
   password: string;
 
   @Column({ type: 'enum', enum: UserRole })
@@ -39,7 +41,15 @@ export class User extends CoreEntity {
 
   @Column({ default: false })
   @Field(type => Boolean)
+  @IsBoolean()
   verified: boolean;
+
+  @Field(type => [Restaurant])
+  @OneToMany(
+    type => Restaurant,
+    restaurant => restaurant.owner,
+  )
+  restaurants: Restaurant[];
 
   @BeforeInsert() //DB에 데이터를 Insert하기 전에 사용되는 TypeORM event Listner
   @BeforeUpdate() //DB에 데이터를 Update하기 전에 사용되는 TypeORM event Listner.

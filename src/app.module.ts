@@ -16,6 +16,9 @@ import { JwtMiddleware } from './jwt/jwt.middleware';
 import { AuthModule } from './auth/auth.module';
 import { Verification } from './common/entities/verification.entity';
 import { MailModule } from './mail/mail.module';
+import { Category } from './restaurants/entities/category.entity';
+import { Restaurant } from './restaurants/entities/restaurant.entity';
+import { RestaurantsModule } from './restaurants/restaurants.module';
 
 //main.ts로 import되는 유일한 모듈
 //따라서 graphQL모듈도 AppModule에 추가해야함
@@ -92,7 +95,7 @@ import { MailModule } from './mail/mail.module';
       synchronize: process.env.NODE_ENV !== 'prod',
       logging:
         process.env.NODE_ENV !== 'prod' && process.env.NODE_ENV !== 'test',
-      entities: [User, Verification],
+      entities: [User, Verification, Restaurant, Category],
     }),
     GraphQLModule.forRoot({
       autoSchemaFile: true,
@@ -109,6 +112,7 @@ import { MailModule } from './mail/mail.module';
     UsersModule,
     CommonModule,
     AuthModule,
+    RestaurantsModule,
   ],
   controllers: [],
   providers: [],

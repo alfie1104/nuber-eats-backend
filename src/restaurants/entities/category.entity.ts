@@ -1,15 +1,8 @@
 import { Field, InputType, ObjectType } from '@nestjs/graphql';
 import { IsBoolean, IsOptional, IsString, Length } from 'class-validator';
 import { CoreEntity } from 'src/common/entities/core.entity';
-import { User } from 'src/users/entities/user.entity';
-import {
-  Column,
-  Entity,
-  JoinColumn,
-  ManyToOne,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
-import { Category } from './category.entity';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Restaurant } from './restaurant.entity';
 
 /*
   [For GraphQL]
@@ -24,10 +17,10 @@ import { Category } from './category.entity';
   @InputType({isAbstract:true}) : 이 InputType이 스키마에 포함되지 않길 원한다는 뜻
    - isAbstract : 어디선가 이걸 복사해서 쓴다고 명시
 */
-@InputType('RestaurantInputType', { isAbstract: true })
+@InputType('CategoryInputType', { isAbstract: true })
 @ObjectType()
 @Entity()
-export class Restaurant extends CoreEntity {
+export class Category extends CoreEntity {
   /*
      class-validator라이브러리의 IsBoolean, IsString, Length 데코레이터 등으로 유효성 검사 가능
    */
@@ -42,23 +35,10 @@ export class Restaurant extends CoreEntity {
   @IsString()
   coverImg: string;
 
-  @Field(type => String, { defaultValue: '대전' })
-  @Column()
-  @IsString()
-  address: string;
-
-  @Field(type => Category, { nullable: true })
-  @ManyToOne(
-    type => Category,
-    category => category.restaurants,
-    { nullable: true, onDelete: 'SET NULL' },
+  @Field(type => [Restaurant])
+  @OneToMany(
+    type => Restaurant,
+    restaurant => restaurant.category,
   )
-  category: Category;
-
-  @Field(type => User)
-  @ManyToOne(
-    type => User,
-    user => user.restaurants,
-  )
-  owner: User;
+  restaurants: Restaurant[];
 }
