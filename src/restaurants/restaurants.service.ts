@@ -97,6 +97,7 @@ export class RestaurantService {
         1. category가 있으면 ...{category}로 바뀜. {category}는 {category : category}와 동일
         2. {category}앞에 ...을 추가함으로써 { }를 없애고 속성이 해체할당되게 됨
       */
+      //id를 보내지 않으면 typeORM이 새로운 entity를 생성함. 기존에 존재하는 것을 update하기 위해서 id를 같이 보내야함
       await this.restaurants.save([
         {
           id: editRestaurantInput.restaurantId,
