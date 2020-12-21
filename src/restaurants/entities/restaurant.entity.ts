@@ -8,6 +8,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  RelationId,
 } from 'typeorm';
 import { Category } from './category.entity';
 
@@ -62,4 +63,14 @@ export class Restaurant extends CoreEntity {
     { onDelete: 'CASCADE' },
   )
   owner: User;
+
+  /*
+  [@RelationId]
+  전체 Relation정보(User Entity)를 갖는 owner와 별도로
+   Relation id만 필요한 경우 사용하기 위해 @RelationId 데코레이터로
+   새로운 속성을 설정한다.
+  */
+
+  @RelationId((restaurant: Restaurant) => restaurant.owner)
+  ownerId: number;
 }
