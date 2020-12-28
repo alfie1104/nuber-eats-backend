@@ -7,10 +7,12 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   RelationId,
 } from 'typeorm';
 import { Category } from './category.entity';
+import { Dish } from './dish.entity';
 
 /*
   [For GraphQL]
@@ -64,13 +66,19 @@ export class Restaurant extends CoreEntity {
   )
   owner: User;
 
+  @Field(type => [Dish])
+  @OneToMany(
+    type => Dish,
+    dish => dish.restaurant,
+  )
+  menu: Dish[];
+
   /*
   [@RelationId]
   전체 Relation정보(User Entity)를 갖는 owner와 별도로
    Relation id만 필요한 경우 사용하기 위해 @RelationId 데코레이터로
    새로운 속성을 설정한다.
   */
-
   @RelationId((restaurant: Restaurant) => restaurant.owner)
   ownerId: number;
 }
