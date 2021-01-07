@@ -5,11 +5,13 @@ import {
   ObjectType,
   registerEnumType,
 } from '@nestjs/graphql';
+import { IsEnum, IsNumber } from 'class-validator';
 import { CoreEntity } from 'src/common/entities/core.entity';
 import { Dish } from 'src/restaurants/entities/dish.entity';
 import { Restaurant } from 'src/restaurants/entities/restaurant.entity';
 import { User } from 'src/users/entities/user.entity';
 import { Column, Entity, JoinTable, ManyToMany, ManyToOne } from 'typeorm';
+import { OrderItem } from './order-item.entity';
 
 enum OrderStatus {
   Pending = 'Pending',
@@ -40,13 +42,13 @@ export class Order extends CoreEntity {
   )
   driver?: User;
 
-  @Field(type => Restaurant)
+  @Field(type => Restaurant, { nullable: true })
   @ManyToOne(
     type => Restaurant,
     restaurant => restaurant.orders,
     { onDelete: 'SET NULL', nullable: true },
   )
-  restaurant: Restaurant;
+  restaurant?: Restaurant;
 
   /*
     [JoinTable] ManyToMany 관계에서는 JoinTable을 지정해줘야하는데
@@ -55,16 +57,18 @@ export class Order extends CoreEntity {
     Dish와 Order의 관계에서, Order는 어떤 고객이 어떤 Dish를 주문했는지 알 수 있으므로
     JoinTable을 Order에 설정한다.
   */
-  @Field(type => [Dish])
-  @ManyToMany(type => Dish)
+  @Field(type => [OrderItem])
+  @ManyToMany(type => OrderItem)
   @JoinTable()
-  dishes: Dish[];
+  items: OrderItem[];
 
   @Field(type => Float, { nullable: true })
   @Column({ nullable: true })
+  @IsNumber()
   total?: number;
 
   @Field(type => OrderStatus)
-  @Column({ type: 'enum', enum: OrderStatus })
+  @Column({ type: 'enum', enum: OrderStatus, default: OrderStatus.Pending })
+  @IsEnum(OrderStatus)
   status: OrderStatus;
 }
