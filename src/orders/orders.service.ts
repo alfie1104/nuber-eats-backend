@@ -42,20 +42,68 @@ export class OrderService {
       //   }),
       // );
 
+      /*
+      //forEach를 사용하면 forEach안에서 return하여도 
+      전체 함수의 진행을 막을 수는 없기 때문에 for 구문을 사용하였음
       items.forEach(async item => {
+      });
+      */
+
+      let orderFinalPrice = 0;
+      const orderItems: OrderItem[] = [];
+
+      for (const item of items) {
         const dish = await this.dishes.findOne(item.dishId);
 
         if (!dish) {
           //abort this whole thing
+          return {
+            ok: false,
+            error: 'Dish not found',
+          };
         }
 
-        await this.orderItems.save(
+        let dishFinalPrice = dish.price;
+
+        for (const itemOption of item.options) {
+          const dishOption = dish.options.find(
+            dishOption => dishOption.name === itemOption.name,
+          );
+
+          if (dishOption) {
+            if (dishOption.extra) {
+              dishFinalPrice = dishFinalPrice + dishOption.extra;
+            } else {
+              const dishOptionChoice = dishOption.choices.find(
+                optionChoice => optionChoice.name === itemOption.choice,
+              );
+              if (dishOptionChoice) {
+                if (dishOptionChoice.extra) {
+                  dishFinalPrice = dishFinalPrice + dishOptionChoice.extra;
+                }
+              }
+            }
+          }
+        }
+
+        orderFinalPrice = orderFinalPrice + dishFinalPrice;
+        const orderItem = await this.orderItems.save(
           this.orderItems.create({
             dish,
             options: item.options,
           }),
         );
-      });
+        orderItems.push(orderItem);
+      }
+
+      await this.orders.save(
+        this.orders.create({
+          customer,
+          restaurant,
+          total: orderFinalPrice,
+          items: orderItems,
+        }),
+      );
 
       return {
         ok: true,
@@ -63,7 +111,7 @@ export class OrderService {
     } catch {
       return {
         ok: false,
-        error: 'Error',
+        error: 'Could not create order',
       };
     }
   }
