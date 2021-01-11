@@ -7,13 +7,19 @@ import {
 } from '@nestjs/graphql';
 import { IsEnum, IsNumber } from 'class-validator';
 import { CoreEntity } from 'src/common/entities/core.entity';
-import { Dish } from 'src/restaurants/entities/dish.entity';
 import { Restaurant } from 'src/restaurants/entities/restaurant.entity';
 import { User } from 'src/users/entities/user.entity';
-import { Column, Entity, JoinTable, ManyToMany, ManyToOne } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinTable,
+  ManyToMany,
+  ManyToOne,
+  RelationId,
+} from 'typeorm';
 import { OrderItem } from './order-item.entity';
 
-enum OrderStatus {
+export enum OrderStatus {
   Pending = 'Pending',
   Cooking = 'Cooking',
   PickedUp = 'PickedUp',
@@ -34,6 +40,15 @@ export class Order extends CoreEntity {
   )
   customer?: User;
 
+  /*
+  [@RelationId]
+  전체 Relation정보(User Entity)를 갖는 owner와 별도로
+   Relation id만 필요한 경우 사용하기 위해 @RelationId 데코레이터로
+   새로운 속성을 설정한다.
+  */
+  @RelationId((order: Order) => order.customer)
+  customerId: number;
+
   @Field(type => User, { nullable: true })
   @ManyToOne(
     type => User,
@@ -41,6 +56,9 @@ export class Order extends CoreEntity {
     { onDelete: 'SET NULL', nullable: true },
   )
   driver?: User;
+
+  @RelationId((order: Order) => order.driver)
+  driverId: number;
 
   @Field(type => Restaurant, { nullable: true })
   @ManyToOne(
