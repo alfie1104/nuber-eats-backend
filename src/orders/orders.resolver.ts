@@ -1,4 +1,5 @@
-import { Args, Mutation, Resolver, Query } from '@nestjs/graphql';
+import { Args, Mutation, Resolver, Query, Subscription } from '@nestjs/graphql';
+import { PubSub } from 'graphql-subscriptions';
 import { AuthUser } from 'src/auth/auth-user.decorator';
 import { Role } from 'src/auth/role.decorator';
 import { User } from 'src/users/entities/user.entity';
@@ -8,6 +9,8 @@ import { GetOrderInput, GetOrderOutput } from './dtos/get-order.dto';
 import { GetOrdersInput, GetOrdersOutput } from './dtos/get-orders.dto';
 import { Order } from './entities/order.entity';
 import { OrderService } from './orders.service';
+
+const pubsub = new PubSub();
 
 @Resolver(of => Order)
 export class OrderResolver {
@@ -48,5 +51,23 @@ export class OrderResolver {
     @Args('input') editOrderInput: EditOrderInput,
   ): Promise<EditOrderOutput> {
     return this.orderService.editOrder(user, editOrderInput);
+  }
+
+  @Mutation(returns => Boolean)
+  potatoReady() {
+    /*
+    pubsub.publish 를 이용하여 특정 subscription 구독자(publish의 첫번째 인자)들에게
+    payload(subscription의 두번째 인자)전송.
+    payload의 key는 @Subscription decorator가 설정된 함수명을 사용해야함
+    */
+    pubsub.publish('hotPotatos', {
+      orderSubscription: 'Your potato is ready.',
+    });
+    return true;
+  }
+
+  @Subscription(returns => String)
+  orderSubscription() {
+    return pubsub.asyncIterator('hotPotatos');
   }
 }

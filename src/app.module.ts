@@ -110,8 +110,20 @@ import { OrderItem } from './orders/entities/order-item.entity';
       ],
     }),
     GraphQLModule.forRoot({
+      installSubscriptionHandlers: true, //graphQL서버가 ws기능을 가지도록 설정(이걸 안하면 http기능만 가짐. subscription 수행 X)
       autoSchemaFile: true,
-      context: ({ req }) => ({ user: req['user'] }), //JwtMiddleware에서 req에 설정한 req["user"]를 context를 이용하여 graphql resolver들과 공유
+      context: ({ req, connection }) => {
+        if (req) {
+          //http요청의 경우, JwtMiddleware에서 req에 설정한 req["user"]를 context를 이용하여 graphql resolver들과 공유
+          return { user: req['user'] };
+        } else {
+          const { context } = connection;
+          console.log(context);
+          /*
+        ws요청의 경우 request가 없음. connection에서 받아온 정보를 이용하여 user정보를 가져와야함
+        */
+        }
+      },
     }),
     JwtModule.forRoot({
       privateKey: process.env.PRIVATE_KEY,
