@@ -56,7 +56,7 @@ export class OrderResolver {
   @Mutation(returns => Boolean)
   potatoReady() {
     /*
-    pubsub.publish 를 이용하여 특정 subscription 구독자(publish의 첫번째 인자)들에게
+    pubsub.publish 를 이용하여 특정 trigger(subscription의 첫번째 인자)에
     payload(subscription의 두번째 인자)전송.
     payload의 key는 @Subscription decorator가 설정된 함수명을 사용해야함
     */
@@ -67,7 +67,9 @@ export class OrderResolver {
   }
 
   @Subscription(returns => String)
-  orderSubscription() {
+  @Role(['Any'])
+  orderSubscription(@AuthUser() user: User) {
+    console.log(user);
     return pubsub.asyncIterator('hotPotatos');
   }
 }

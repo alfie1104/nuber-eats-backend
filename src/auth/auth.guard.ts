@@ -1,12 +1,18 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { GqlExecutionContext } from '@nestjs/graphql';
+import { JwtService } from 'src/jwt/jwt.service';
 import { User } from 'src/users/entities/user.entity';
+import { UserService } from 'src/users/users.service';
 import { AllowedRoles } from './role.decorator';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
-  constructor(private readonly reflector: Reflector) {}
+  constructor(
+    private readonly reflector: Reflector,
+    private readonly jwtService: JwtService,
+    private readonly userService: UserService,
+  ) {}
   /*
         Guard는 function의 기능을 보충해주며, true 혹은 false 값을 리턴해야함
 
@@ -15,7 +21,7 @@ export class AuthGuard implements CanActivate {
 
         그 결과에 따라 request를 막을지 통과시킬지가 결정됨(false일 경우 request가 차단됨)
     */
-  canActivate(context: ExecutionContext) {
+  async canActivate(context: ExecutionContext) {
     //role.decorator에서 SetMetadata('roles',..) 로 설정한 metadata를 가져옴
     const roles = this.reflector.get<AllowedRoles>(
       'roles',
@@ -38,21 +44,40 @@ export class AuthGuard implements CanActivate {
 
     //http 형태로 되어있는 nestjs의 ExecutionContext를 graphqlExecutionContext로 변환
     const gqlContext = GqlExecutionContext.create(context).getContext();
-    const user: User = gqlContext['user'];
+    const token = gqlContext.token;
 
-    if (!user) {
+    if (token && token.length > 0) {
+      try {
+        const decoded = this.jwtService.verify(token.toString());
+
+        if (typeof decoded === 'object' && decoded.hasOwnProperty('id')) {
+          //token에서 추출한 id를 이용하여 db에서 유저를 찾음
+          const { user, ok } = await this.userService.findById(decoded['id']);
+
+          if (!user) {
+            return false;
+          }
+
+          gqlContext['user'] = user;
+
+          if (roles.includes('Any')) {
+            return true;
+          }
+
+          /*
+            API에서 @Role(['Any','Owner'...])등으로 설정한 정보(SetMetadata를 이용하여 설정)가 roles에 담기게 됨(reflector를 통해서)
+            따라서 roles.includes를 통해 user.role이 roles에 포함되어있는지 확인함으로써
+            해당 API에 접근가능한 사용자인지 아닌지를 판별 할 수 있음
+            */
+          return roles.includes(user.role);
+        } else {
+          return false;
+        }
+      } catch (e) {
+        return false;
+      }
+    } else {
       return false;
     }
-
-    if (roles.includes('Any')) {
-      return true;
-    }
-
-    /*
-    API에서 @Role(['Any','Owner'...])등으로 설정한 정보(SetMetadata를 이용하여 설정)가 roles에 담기게 됨(reflector를 통해서)
-    따라서 roles.includes를 통해 user.role이 roles에 포함되어있는지 확인함으로써
-    해당 API에 접근가능한 사용자인지 아닌지를 판별 할 수 있음
-    */
-    return roles.includes(user.role);
   }
 }

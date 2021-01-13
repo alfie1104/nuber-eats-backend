@@ -113,16 +113,17 @@ import { OrderItem } from './orders/entities/order-item.entity';
       installSubscriptionHandlers: true, //graphQL서버가 ws기능을 가지도록 설정(이걸 안하면 http기능만 가짐. subscription 수행 X)
       autoSchemaFile: true,
       context: ({ req, connection }) => {
-        if (req) {
-          //http요청의 경우, JwtMiddleware에서 req에 설정한 req["user"]를 context를 이용하여 graphql resolver들과 공유
-          return { user: req['user'] };
-        } else {
-          const { context } = connection;
-          console.log(context);
-          /*
-        ws요청의 경우 request가 없음. connection에서 받아온 정보를 이용하여 user정보를 가져와야함
+        const TOKEN_KEY = 'x-jwt';
+        //context를 이용하여 정보를 graphql resolver들과 공유
+
+        /*
+        http요청의 경우, req.headers에 있는 정보를 가져오고
+        Websocket은 connection.context의 정보를 가져옴.(ws요청의 경우 request가 없음. connection에서 받아온 정보를 이용하여 user정보를 가져와야함)
+        Websocket의 connection.context는 http의 req.headers와 유사한역할임
         */
-        }
+        return {
+          token: req ? req.headers[TOKEN_KEY] : connection.context[TOKEN_KEY],
+        };
       },
     }),
     JwtModule.forRoot({
@@ -142,25 +143,27 @@ import { OrderItem } from './orders/entities/order-item.entity';
   controllers: [],
   providers: [],
 })
-// export class AppModule {}
+export class AppModule {}
+
+//////Websocket에서도 인증을 처리할 수 있도록 jwtMiddleware사용 중지. jwtMiddleware는 req를 이용하기때문에 http에서만 사용가능
 //Middleware를 사용하기 위해 NestModule을 Implements했음
-export class AppModule implements NestModule {
-  configure(consumer: MiddlewareConsumer): any {
-    //이 부분 말고 미들웨어를 main.ts파일의 bootstrap 함수내에서 구현해도 됨. app.use(미들웨어명)
-    /*
-      apply만 해도되지만, 
-      forRoutes : forRoutes를 이용하여 어떤 경로에 middleware를 적용할지 지정할 수 있음
-      exclude : exclude를 이용하여 특정 경로만 제외 시킬 수 있음
-     */
-    /*
-    consumer.apply(jwtMiddleware).exclude({
-      path: '/admin',
-      method: RequestMethod.ALL,
-    });
-    */
-    consumer.apply(JwtMiddleware).forRoutes({
-      path: '/graphql',
-      method: RequestMethod.ALL,
-    });
-  }
-}
+// export class AppModule implements NestModule {
+//   configure(consumer: MiddlewareConsumer): any {
+//     //이 부분 말고 미들웨어를 main.ts파일의 bootstrap 함수내에서 구현해도 됨. app.use(미들웨어명)
+//     /*
+//       apply만 해도되지만,
+//       forRoutes : forRoutes를 이용하여 어떤 경로에 middleware를 적용할지 지정할 수 있음
+//       exclude : exclude를 이용하여 특정 경로만 제외 시킬 수 있음
+//      */
+//     /*
+//     consumer.apply(jwtMiddleware).exclude({
+//       path: '/admin',
+//       method: RequestMethod.ALL,
+//     });
+//     */
+//     consumer.apply(JwtMiddleware).forRoutes({
+//       path: '/graphql',
+//       method: RequestMethod.ALL,
+//     });
+//   }
+// }
