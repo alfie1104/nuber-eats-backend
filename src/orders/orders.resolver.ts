@@ -1,7 +1,9 @@
+import { Inject } from '@nestjs/common';
 import { Args, Mutation, Resolver, Query, Subscription } from '@nestjs/graphql';
 import { PubSub } from 'graphql-subscriptions';
 import { AuthUser } from 'src/auth/auth-user.decorator';
 import { Role } from 'src/auth/role.decorator';
+import { PUB_SUB } from 'src/common/common.constants';
 import { User } from 'src/users/entities/user.entity';
 import { CreateOrderInput, CreateOrderOutput } from './dtos/create-order.dto';
 import { EditOrderInput, EditOrderOutput } from './dtos/edit-order.dto';
@@ -10,11 +12,12 @@ import { GetOrdersInput, GetOrdersOutput } from './dtos/get-orders.dto';
 import { Order } from './entities/order.entity';
 import { OrderService } from './orders.service';
 
-const pubsub = new PubSub();
-
 @Resolver(of => Order)
 export class OrderResolver {
-  constructor(private readonly orderService: OrderService) {}
+  constructor(
+    private readonly orderService: OrderService,
+    @Inject(PUB_SUB) private readonly pubsub: PubSub,
+  ) {}
 
   @Mutation(returns => CreateOrderOutput)
   @Role(['Client'])
@@ -54,22 +57,36 @@ export class OrderResolver {
   }
 
   @Mutation(returns => Boolean)
-  potatoReady() {
+  async potatoReady(@Args('potatoId') potatoId: number) {
     /*
     pubsub.publish 를 이용하여 특정 trigger(subscription의 첫번째 인자)에
     payload(subscription의 두번째 인자)전송.
     payload의 key는 @Subscription decorator가 설정된 함수명을 사용해야함
     */
-    pubsub.publish('hotPotatos', {
-      orderSubscription: 'Your potato is ready.',
+    await this.pubsub.publish('hotPotatos', {
+      orderSubscription: potatoId,
     });
     return true;
   }
 
-  @Subscription(returns => String)
+  @Subscription(returns => String, {
+    filter: (payload, variables, context) => {
+      //특정한 조건을 만족할때에만 subscription을 수신하도록 하기 위해 filter적용
+      return payload.orderSubscription === variables.potatoId;
+    },
+    resolve: (payload, args, context, info) => {
+      /*
+      사용자가 받는 update 알림의 형태를 바꿔주기 위해 resolve 구현
+      resolve에서 반환한 값을 사용자가 수신하게 됨
+      */
+      return `Your potato with the id ${payload.orderSubscription} is ready.`;
+    },
+  })
   @Role(['Any'])
-  orderSubscription(@AuthUser() user: User) {
-    console.log(user);
-    return pubsub.asyncIterator('hotPotatos');
+  orderSubscription(
+    @AuthUser() user: User,
+    @Args('potatoId') potatoId: number,
+  ) {
+    return this.pubsub.asyncIterator('hotPotatos');
   }
 }
