@@ -3,7 +3,7 @@ import { Args, Mutation, Resolver, Query, Subscription } from '@nestjs/graphql';
 import { PubSub } from 'graphql-subscriptions';
 import { AuthUser } from 'src/auth/auth-user.decorator';
 import { Role } from 'src/auth/role.decorator';
-import { PUB_SUB } from 'src/common/common.constants';
+import { NEW_PENDING_ORDER, PUB_SUB } from 'src/common/common.constants';
 import { User } from 'src/users/entities/user.entity';
 import { CreateOrderInput, CreateOrderOutput } from './dtos/create-order.dto';
 import { EditOrderInput, EditOrderOutput } from './dtos/edit-order.dto';
@@ -88,5 +88,26 @@ export class OrderResolver {
     @Args('potatoId') potatoId: number,
   ) {
     return this.pubsub.asyncIterator('hotPotatos');
+  }
+
+  @Subscription(returns => Order, {
+    filter: (payload, variables, context) => {
+      //특정한 조건을 만족할때에만 subscription을 수신하도록 하기 위해 filter적용
+      //filter는 true 혹은 false를 return해야함
+
+      return payload.pendingOrders.ownerId === context.user.id;
+    },
+    resolve: (payload, args, context, info) => {
+      /*
+      사용자가 받는 update 알림의 형태를 바꿔주기 위해 resolve 구현
+      resolve에서 반환한 값을 사용자가 수신하게 됨
+      */
+      return payload.pendingOrders.order;
+    },
+  })
+  @Role(['Owner'])
+  pendingOrders() {
+    //NEW_PENDING_ORDER (String)의 asynIterator를 return
+    return this.pubsub.asyncIterator(NEW_PENDING_ORDER);
   }
 }

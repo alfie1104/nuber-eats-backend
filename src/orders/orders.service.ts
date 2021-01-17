@@ -1,5 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { PubSub } from 'graphql-subscriptions';
+import { NEW_PENDING_ORDER, PUB_SUB } from 'src/common/common.constants';
 import { Dish } from 'src/restaurants/entities/dish.entity';
 import { Restaurant } from 'src/restaurants/entities/restaurant.entity';
 import { User, UserRole } from 'src/users/entities/user.entity';
@@ -22,6 +24,7 @@ export class OrderService {
     private readonly restaurants: Repository<Restaurant>,
     @InjectRepository(Dish)
     private readonly dishes: Repository<Dish>,
+    @Inject(PUB_SUB) private readonly pubSub: PubSub,
   ) {}
 
   async createOrder(
@@ -99,7 +102,7 @@ export class OrderService {
         orderItems.push(orderItem);
       }
 
-      await this.orders.save(
+      const order = await this.orders.save(
         this.orders.create({
           customer,
           restaurant,
@@ -107,6 +110,18 @@ export class OrderService {
           items: orderItems,
         }),
       );
+
+      /*
+      pubsub.publish 를 이용하여 특정 trigger(subscription의 첫번째 인자)에
+      payload(subscription의 두번째 인자)전송.
+      payload의 key는 @Subscription decorator가 설정된 함수명을 사용해야함
+      */
+      await this.pubSub.publish(NEW_PENDING_ORDER, {
+        pendingOrders: {
+          order,
+          ownerId: restaurant.ownerId,
+        },
+      });
 
       return {
         ok: true,
