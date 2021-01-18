@@ -1,7 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { PubSub } from 'graphql-subscriptions';
-import { NEW_PENDING_ORDER, PUB_SUB } from 'src/common/common.constants';
+import {
+  NEW_COOKED_ORDER,
+  NEW_ORDER_UPDATE,
+  NEW_PENDING_ORDER,
+  PUB_SUB,
+} from 'src/common/common.constants';
 import { Dish } from 'src/restaurants/entities/dish.entity';
 import { Restaurant } from 'src/restaurants/entities/restaurant.entity';
 import { User, UserRole } from 'src/users/entities/user.entity';
@@ -242,7 +247,7 @@ export class OrderService {
   ): Promise<EditOrderOutput> {
     try {
       const order = await this.orders.findOne(orderId, {
-        relations: ['restaurant'],
+        relations: ['restaurant', 'customer', 'driver'],
       });
 
       if (!order) {
@@ -285,12 +290,34 @@ export class OrderService {
         };
       }
 
-      await this.orders.save([
-        {
-          id: orderId,
-          status,
-        },
-      ]);
+      await this.orders.save({
+        id: orderId,
+        status,
+      });
+
+      const newOrder = { ...order, status };
+
+      if (user.role === UserRole.Owner) {
+        if (status === OrderStatus.Cooked) {
+          /*
+          pubsub.publish 를 이용하여 특정 trigger(subscription의 첫번째 인자)에
+          payload(subscription의 두번째 인자)전송.
+          payload의 key는 @Subscription decorator가 설정된 함수명을 사용해야함
+          */
+          /*
+          save함수의 리턴값을 를 받아서 쓴다면 status를 추가하지 않아도 되겠지만(업데이트 된 값이므로)
+          save함수의 리턴값은 완전한 order를 리턴하지 않고 변경된 사항만 리턴하기 때문에,
+          완전한 order를 publish하기 위해서 findOne을 이용하여 찾았던 기존 order에 
+          status를 추가하여 publish하도록 구성하였음
+         */
+          await this.pubSub.publish(NEW_COOKED_ORDER, {
+            cookedOrders: newOrder,
+          });
+        }
+      }
+      await this.pubSub.publish(NEW_ORDER_UPDATE, {
+        orderUpdates: newOrder,
+      });
 
       return {
         ok: true,

@@ -3,12 +3,18 @@ import { Args, Mutation, Resolver, Query, Subscription } from '@nestjs/graphql';
 import { PubSub } from 'graphql-subscriptions';
 import { AuthUser } from 'src/auth/auth-user.decorator';
 import { Role } from 'src/auth/role.decorator';
-import { NEW_PENDING_ORDER, PUB_SUB } from 'src/common/common.constants';
+import {
+  NEW_COOKED_ORDER,
+  NEW_PENDING_ORDER,
+  PUB_SUB,
+  NEW_ORDER_UPDATE,
+} from 'src/common/common.constants';
 import { User } from 'src/users/entities/user.entity';
 import { CreateOrderInput, CreateOrderOutput } from './dtos/create-order.dto';
 import { EditOrderInput, EditOrderOutput } from './dtos/edit-order.dto';
 import { GetOrderInput, GetOrderOutput } from './dtos/get-order.dto';
 import { GetOrdersInput, GetOrdersOutput } from './dtos/get-orders.dto';
+import { OrderUpdatesInput } from './dtos/order-updates.dto';
 import { Order } from './entities/order.entity';
 import { OrderService } from './orders.service';
 
@@ -109,5 +115,39 @@ export class OrderResolver {
   pendingOrders() {
     //NEW_PENDING_ORDER (String)의 asynIterator를 return
     return this.pubsub.asyncIterator(NEW_PENDING_ORDER);
+  }
+
+  @Subscription(returns => Order, {
+    filter: (payload, _, context) => {
+      return true;
+    },
+    resolve: (payload, args, context, info) => {
+      return payload.cookedOrders.order;
+    },
+  })
+  @Role(['Delivery'])
+  cookedOrders() {
+    return this.pubsub.asyncIterator(NEW_COOKED_ORDER);
+  }
+
+  @Subscription(returns => Order, {
+    filter: (
+      { orderUpdates: order }: { orderUpdates: Order },
+      { input }: { input: OrderUpdatesInput },
+      { user }: { user: User },
+    ) => {
+      if (
+        order.driverId !== user.id &&
+        order.customerId !== user.id &&
+        order.restaurant.ownerId !== user.id
+      ) {
+        return false;
+      }
+      return order.id === input.id;
+    },
+  })
+  @Role(['Any'])
+  orderUpdates(@Args('input') orderUpdatesInput: OrderUpdatesInput) {
+    return this.pubsub.asyncIterator(NEW_ORDER_UPDATE);
   }
 }
