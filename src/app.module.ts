@@ -23,6 +23,8 @@ import { Dish } from './restaurants/entities/dish.entity';
 import { OrdersModule } from './orders/orders.module';
 import { Order } from './orders/entities/order.entity';
 import { OrderItem } from './orders/entities/order-item.entity';
+import { PaymentsModule } from './payments/payments.module';
+import { Payment } from './payments/entities/payment.entity';
 
 //main.ts로 import되는 유일한 모듈
 //따라서 graphQL모듈도 AppModule에 추가해야함
@@ -107,6 +109,7 @@ import { OrderItem } from './orders/entities/order-item.entity';
         Dish,
         Order,
         OrderItem,
+        Payment,
       ],
     }),
     GraphQLModule.forRoot({
@@ -139,6 +142,7 @@ import { OrderItem } from './orders/entities/order-item.entity';
     AuthModule,
     RestaurantsModule,
     OrdersModule,
+    PaymentsModule,
   ],
   controllers: [],
   providers: [],
