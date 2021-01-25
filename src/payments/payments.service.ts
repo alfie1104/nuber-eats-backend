@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
+import { Cron, Interval } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Restaurant } from 'src/restaurants/entities/restaurant.entity';
 import { User } from 'src/users/entities/user.entity';
-import { Repository } from 'typeorm';
+import { LessThan, Repository } from 'typeorm';
 import {
   CreatePaymentInput,
   CreatePaymentOutput,
@@ -76,5 +77,24 @@ export class PaymentService {
         error: 'Could not load payments.',
       };
     }
+  }
+
+  /*
+  @Interval(millisecond)
+   특정 시간 간격마다 함수를 실행시키기 위해 interval 데코레이터 사용
+
+   @Cron(crontime) [예 : @Cron(45 * * * * * *)]
+   Cron데코레이터를 이용하면 특정 시점마다 함수를 실행시킬 수도 있음
+  */
+  async checkPromotedRestaurants() {
+    const restaurants = await this.restaurants.find({
+      isPromoted: true,
+      promotedUntil: LessThan(new Date()),
+    });
+    restaurants.forEach(async restaurant => {
+      restaurant.isPromoted = false;
+      restaurant.promotedUntil = null;
+      await this.restaurants.save(restaurant);
+    });
   }
 }
