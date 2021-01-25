@@ -14,6 +14,6 @@ async function bootstrap() {
 
     단, 여기서 사용하기 위해서는 미들웨어가 functional middleware이어야함. Class Middleware이면 안 된다.
   */
-  await app.listen(3000);
+  await app.listen(4000);
 }
 bootstrap();

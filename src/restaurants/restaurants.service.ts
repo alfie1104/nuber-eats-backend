@@ -222,6 +222,9 @@ export class RestaurantService {
         where: {
           category,
         },
+        order: {
+          isPromoted: 'DESC',
+        },
         take: 25,
         skip: (page - 1) * 25,
       }); //특정 갯수의 결과만 가져오기 위해 take 옵션을 주었음
@@ -247,6 +250,9 @@ export class RestaurantService {
       const [results, totalResults] = await this.restaurants.findAndCount({
         skip: (page - 1) * 25,
         take: 25,
+        order: {
+          isPromoted: 'DESC',
+        },
       });
 
       return {

@@ -25,6 +25,7 @@ import { Order } from './orders/entities/order.entity';
 import { OrderItem } from './orders/entities/order-item.entity';
 import { PaymentsModule } from './payments/payments.module';
 import { Payment } from './payments/entities/payment.entity';
+import { ScheduleModule } from '@nestjs/schedule';
 
 //main.ts로 import되는 유일한 모듈
 //따라서 graphQL모듈도 AppModule에 추가해야함
@@ -129,6 +130,7 @@ import { Payment } from './payments/entities/payment.entity';
         };
       },
     }),
+    ScheduleModule.forRoot(),
     JwtModule.forRoot({
       privateKey: process.env.PRIVATE_KEY,
     }),
