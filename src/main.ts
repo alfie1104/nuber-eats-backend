@@ -7,6 +7,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   //class-validation을 하기 위해 GlobalPipe를 사용
   app.useGlobalPipes(new ValidationPipe());
+  app.enableCors();
   //app.use(JwtMiddleware);
   /* 
     미들웨어를 여기서 혹은 
