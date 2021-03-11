@@ -63,6 +63,7 @@ export class RestaurantService {
       await this.restaurants.save(newRestaurant); //생성한 javascript 객체를 DB에 저장
       return {
         ok: true,
+        restaurantId: newRestaurant.id,
       };
     } catch (error) {
       return {
