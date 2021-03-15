@@ -4,6 +4,7 @@ import {
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { FileInterceptor } from '@nestjs/platform-express';
 import * as AWS from 'aws-sdk';
 
@@ -12,13 +13,15 @@ const BUCKET_NAME = 'nubereatsbucket10';
 
 @Controller('uploads')
 export class UploadsController {
+  constructor(private readonly configService: ConfigService) {}
+
   @Post('')
   @UseInterceptors(FileInterceptor('file'))
   async uploadFile(@UploadedFile() file: Express.Multer.File) {
     AWS.config.update({
       credentials: {
-        accessKeyId: 'AKIAQIQU4PT3NKVM2MUE',
-        secretAccessKey: '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',
+        accessKeyId: this.configService.get('AWS_KEY'),
+        secretAccessKey: this.configService.get('AWS_SECRET'),
       },
     });
     try {
