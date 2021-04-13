@@ -119,6 +119,7 @@ import { JoinColumn } from 'typeorm';
       ssl: { rejectUnauthorized: false },
     }),
     GraphQLModule.forRoot({
+      playground: process.env.NODE_ENV !== 'prod',
       installSubscriptionHandlers: true, //graphQL서버가 ws기능을 가지도록 설정(이걸 안하면 http기능만 가짐. subscription 수행 X)
       autoSchemaFile: true,
       context: ({ req, connection }) => {
